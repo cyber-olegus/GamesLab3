@@ -24,6 +24,7 @@ public sealed class MainWindow : Window
     private readonly TextBlock enemyText = UiKit.Text("Откройте JSON с противниками.", 21);
     private readonly TextBlock status = UiKit.Text("");
     private readonly TextBlock source = UiKit.Text("JSON ещё не выбран.", 12, "#64748B");
+    private readonly TextBlock iconHint = UiKit.Text("Иконки можно импортировать из предыдущей лабораторной работы.", 12, "#64748B");
     private readonly TextBlock goldText, damageText, healthText, cooldownText, levelText, effectsText;
     private readonly Button damageButton, cooldownButton;
     private string? loadedPath;
@@ -41,8 +42,10 @@ public sealed class MainWindow : Window
         var bar = new StackPanel { Margin = new Thickness(0, 0, 0, 16) };
         var buttons = new WrapPanel();
         buttons.Children.Add(UiKit.Button("Открыть JSON · новая игра", (_, _) => ChooseFile()));
+        buttons.Children.Add(UiKit.Button("Импортировать иконки", (_, _) => ChooseIcons()));
         buttons.Children.Add(UiKit.Button("Начать заново", (_, _) => Run(() => { AdvanceClock(); controller.Restart(); })));
         bar.Children.Add(buttons); bar.Children.Add(source); source.Margin = new Thickness(0, 8, 0, 0);
+        bar.Children.Add(iconHint); iconHint.Margin = new Thickness(0, 4, 0, 0);
         DockPanel.SetDock(bar, Dock.Top); root.Children.Add(bar);
         DockPanel.SetDock(status, Dock.Bottom); status.Margin = new Thickness(0, 16, 0, 0); root.Children.Add(status);
         var grid = new Grid();
@@ -88,10 +91,34 @@ public sealed class MainWindow : Window
                 InitialDirectory = Directory.Exists(data) ? data : AppContext.BaseDirectory,
                 FileName = "enemies.demo.json" };
             if (dialog.ShowDialog(this) == true)
-                Run(() => { controller.LoadFromJson(dialog.FileName); loadedPath = dialog.FileName; icons.Clear(); });
+                Run(() => { controller.LoadFromJson(dialog.FileName); loadedPath = dialog.FileName; icons.SetTemplateFile(dialog.FileName); });
         }
         finally { watch.Start(); previous = watch.Elapsed; timer.Start(); RefreshUi(); }
     }
+    private void ChooseIcons()
+    {
+        AdvanceClock(); timer.Stop(); watch.Stop();
+        try
+        {
+            var dialog = new OpenFolderDialog
+            {
+                Title = "Выберите папку Assets/Icons из Лабы 2 или папку самого проекта Лабы 2",
+                Multiselect = false
+            };
+            if (dialog.ShowDialog(this) == true)
+                Run(() =>
+                {
+                    int count = icons.Import(dialog.FolderName);
+                    string details = icons.SavesToProject
+                        ? "PNG также сохранены в исходниках проекта. Добавьте папку Assets/Icons в коммит."
+                        : "PNG сохранены рядом с программой. Для отправки в GitHub импортируйте их при запуске проекта через Visual Studio.";
+                    MessageBox.Show(this, $"Импортировано PNG: {count}.\nПапка: {icons.StorageDirectory}\n\n{details}",
+                        "Иконки импортированы", MessageBoxButton.OK, MessageBoxImage.Information);
+                });
+        }
+        finally { watch.Start(); previous = watch.Elapsed; timer.Start(); RefreshUi(); }
+    }
+
     private void Run(Action action)
     {
         try { action(); }
@@ -143,8 +170,10 @@ public sealed class MainWindow : Window
         {
             double size = controller.EnemySize;
             ImageSource? image = icons.Load(enemy.Icon);
+            iconHint.Text = image is null ? icons.LastError : $"Иконка: {enemy.Icon}";
             UIElement view = image is null ? SceneRenderer.EnemySilhouette(size) :
                 new Image { Source = image, Width = size, Height = size, Stretch = Stretch.Uniform };
+            RenderOptions.SetBitmapScalingMode(view, BitmapScalingMode.NearestNeighbor);
             var target = new Border { Width = size, Height = size, Background = UiKit.Brush("#EEF2FF"),
                 CornerRadius = new CornerRadius(18), Child = view, ToolTip = "Нажмите, чтобы атаковать" };
             Canvas.SetLeft(target, controller.EnemyPosition.X); Canvas.SetTop(target, controller.EnemyPosition.Y);
