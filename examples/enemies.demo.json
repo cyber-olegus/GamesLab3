@@ -1,0 +1,3 @@
+[
+  {"Name":"Учебный голем","IconName":"golem_demo.png","BaseLife":40,"LifeModifier":1.1,"BaseGold":40,"GoldModifier":1.1,"SpawnChance":1.0}
+]
