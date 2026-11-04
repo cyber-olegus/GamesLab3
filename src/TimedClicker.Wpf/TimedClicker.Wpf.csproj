@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>WinExe</OutputType><TargetFramework>net8.0-windows</TargetFramework><UseWPF>true</UseWPF><EnableWindowsTargeting>true</EnableWindowsTargeting><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../GamesLab3.Core/GamesLab3.Core.csproj" />
+    <Compile Include="../WpfShared/*.cs" Link="Shared/%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>
